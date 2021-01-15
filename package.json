@@ -1,0 +1,61 @@
+{
+  "name": "little-react-router",
+  "version": "0.0.0",
+  "source": "src/index.tsx",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "typings": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/graywolftech/little-react-router.git"
+  },
+  "bugs": {
+    "url": "https://github.com/graywolftech/little-react-router/issues"
+  },
+  "homepage": "https://github.com/graywolftech/little-react-router#readme",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && microbundle build --no-compress && cd dist && rm -rf *.umd.* mocks.* *.spec.* *.modern.* setup.*",
+    "test": "npm run t src/index.spec.tsx",
+    "t": "node --preserve-symlinks-main --preserve-symlinks -r esm -r esbuild-register",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=16"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^10.4.9",
+    "@types/jsdom": "^16.2.6",
+    "@types/react": "^16.14.2",
+    "@types/react-dom": "^16.9.10",
+    "esbuild": "^0.8.32",
+    "esbuild-register": "^1.2.1",
+    "esm": "^3.2.25",
+    "husky": "^2.7.0",
+    "jsdom": "^16.4.0",
+    "microbundle": "^0.13.0",
+    "prettier": "^1.19.1",
+    "pretty-quick": "^1.11.1",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
+    "typescript": "^4.1.3",
+    "uvu": "^0.5.1"
+  },
+  "dependencies": {
+    "path-to-regexp": "^6.2.0"
+  }
+}
