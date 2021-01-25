@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'little-react-router';
 import { routes } from './routes';
 
@@ -11,6 +11,7 @@ function Link({ label, route, params }) {
         e.preventDefault();
         goTo(route, params);
       }}
+      href={route.path}
     >
       {label}
     </a>
@@ -18,9 +19,19 @@ function Link({ label, route, params }) {
 }
 
 export default () => {
-  const { routeId } = useRouter();
+  const { routeId, onBeforeNavigate } = useRouter();
   const route = useMemo(() =>
     Object.values(routes).find(({ id }) => id === routeId)
+  );
+
+  const [value, setValue] = useState('');
+
+  useEffect(
+    () =>
+      onBeforeNavigate(() =>
+        value ? 'Are you sure you want to leave?' : undefined
+      ),
+    [value]
   );
 
   return (
@@ -32,6 +43,15 @@ export default () => {
         <Link label="Link C" route={routes.c} params={{ c: '', d: '' }} />
         <a href="/404">404</a>
       </nav>
+
+      <div>
+        <div>{`Blocking: ${value ? 'Yes' : 'No'}`}</div>
+        <input
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          placeholder="Type something in here to block transition"
+        />
+      </div>
 
       {route ? <route.component /> : <div>This is a 404</div>}
     </div>

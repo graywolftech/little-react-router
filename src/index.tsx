@@ -4,8 +4,10 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useRef,
 } from 'react';
 import { Key, pathToRegexp } from 'path-to-regexp';
+import mitt from 'mitt';
 
 export type RouterHandler = (path: string, queryString: string) => boolean;
 
@@ -35,6 +37,8 @@ export type RouterStateType = {
   hash: string;
 };
 
+type Dispose = () => void;
+
 export type RouterContextType = RouterStateType & {
   currentUrl: string;
   goTo: (
@@ -44,6 +48,9 @@ export type RouterContextType = RouterStateType & {
     hash?: string
   ) => void;
   isRoute: (route: RouteType) => boolean;
+  onBeforeNavigate: (
+    cb: (routeId: string | undefined) => string | undefined
+  ) => Dispose;
 };
 
 export const createMatcher = (path: string) => {
@@ -128,6 +135,7 @@ export const Router: React.FC<{ routes: RoutesType }> = ({
   children,
   routes,
 }) => {
+  const emitter = useRef(mitt());
   const matchers = useMemo(() => {
     return Object.values(routes).map((route): [Matcher, RouteType] => {
       return [createMatcher(route.path), route];
@@ -172,9 +180,34 @@ export const Router: React.FC<{ routes: RoutesType }> = ({
     [state]
   );
 
+  /**
+   * Returns the text to prompt the user with or undefined.
+   */
+  const shouldPromptUser = useCallback((routeId: string | undefined):
+    | string
+    | undefined => {
+    // The types of mitt aren't that good so I need to type this manually
+    const handlers = (emitter.current.all.get('navigate') ?? []) as Array<
+      (routeId: string | undefined) => string | undefined
+    >;
+
+    for (const handler of handlers) {
+      const result = handler(routeId);
+
+      if (result) {
+        return result;
+      }
+    }
+
+    return;
+  }, []);
+
   const goTo = useCallback(
     (route: RouteType, params = {}, queryParams = {}, hash = '') => {
       const { id, path } = route;
+
+      const text = shouldPromptUser(id);
+      if (text && !window.confirm(text)) return;
 
       const newUrl: string = replaceUrlParams(path, params, queryParams, hash);
       window.history.pushState(null, '', newUrl);
@@ -194,6 +227,29 @@ export const Router: React.FC<{ routes: RoutesType }> = ({
     [state.routeId]
   );
 
+  const onBeforeNavigate = useCallback((cb: (routeId: string) => void) => {
+    const wrapper = (routeId: string | undefined) => cb(routeId!);
+    emitter.current.on('navigate', wrapper);
+    return () => emitter.current.off('navigate', wrapper);
+  }, []);
+
+  useEffect(() => {
+    // See documentation below
+    // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
+    const listener = (e: BeforeUnloadEvent) => {
+      const text = shouldPromptUser(undefined);
+      if (text) {
+        // Cancel the event
+        e.preventDefault(); // If you prevent default behavior in Mozilla Firefox prompt will always be shown
+        // Chrome requires returnValue to be set
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', listener);
+    return () => window.removeEventListener('beforeunload', listener);
+  }, []);
+
   return (
     <RouterContext.Provider
       value={{
@@ -201,6 +257,7 @@ export const Router: React.FC<{ routes: RoutesType }> = ({
         currentUrl,
         goTo,
         isRoute,
+        onBeforeNavigate,
       }}
     >
       {children}

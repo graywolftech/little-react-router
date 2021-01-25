@@ -55,7 +55,7 @@ import { App } from './App';
 import React from 'react';
 import { useRouter } from 'little-react-router';
 
-export const App = () => {
+export default () => {
   const { goTo, isRoute } = useRouter();
 
   return (
@@ -129,3 +129,25 @@ const routes = {
 ```
 
 > See [path-to-regexp](https://github.com/pillarjs/path-to-regexp) for more details.
+
+5. Prevent navigation using the `onBeforeNavigate` function. This even prevents page reloads.
+
+```jsx
+// In App.jsx
+import React from 'react';
+import { useRouter } from 'little-react-router';
+
+export default () => {
+  const { routeId, onBeforeNavigate } = useRouter();
+
+  useEffect(
+    () =>
+      onBeforeNavigate(() =>
+        someCondition() ? 'Are you sure you want to leave?' : undefined
+      ),
+    []
+  );
+
+  // SNIP
+};
+```
